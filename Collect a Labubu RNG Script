@@ -1,0 +1,144 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local autoRollActive1 = false 
+local autoRollActive2 = false
+local autoRollActive3 = false
+
+local MainWindow = Rayfield:CreateWindow({
+   Name = "Collect a Labubu RNG Script",
+   Icon = 0,
+   LoadingTitle = "Collect a Labubu RNG Script",
+   LoadingSubtitle = "by Xythe",
+   ShowText = "Xythe Hub",
+   Theme = "Default",
+   ToggleUIKeybind = "K",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false,
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"Hello"}
+   }
+})
+
+local MainTab = MainWindow:CreateTab("Roles - Free", 4483362458)
+
+local Button = MainTab:CreateButton({
+   Name = "Role - Basic",
+   Callback = function()
+      game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RollRequest"):FireServer()
+   end,
+})
+
+local Toggle = MainTab:CreateToggle({
+   Name = "Auto Roll - Basic",
+   CurrentValue = false,
+   Flag = "Toggle1", 
+   Callback = function(Tog1)
+      autoRollActive1 = Tog1  
+      
+      if Tog1 == true then
+         task.spawn(function()
+            while autoRollActive1 == true do
+               game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RollRequest"):FireServer()
+               wait(10)
+            end
+         end)
+      end
+   end,
+})
+
+
+local Button = MainTab:CreateButton({
+   Name = "Role - Banner",
+   Callback = function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("BannerRollRequest"):FireServer()
+   end,
+})
+
+
+local Toggle = MainTab:CreateToggle({
+   Name = "Auto Roll - Banner",
+   CurrentValue = false,
+   Flag = "Toggle2", 
+   Callback = function(Tog2)
+      autoRollActive2 = Tog2  
+      
+      if Tog2 == true then
+         task.spawn(function()
+            while autoRollActive2 == true do
+               game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("BannerRollRequest"):FireServer()
+               wait(10)
+            end
+         end)
+      end
+   end,
+})
+
+local Button = MainTab:CreateButton({
+   Name = "Role - Lucky",
+   Callback = function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("LuckyRollRequest"):FireServer()
+   end,
+})
+
+
+local Toggle = MainTab:CreateToggle({
+   Name = "Auto Roll - Lucky",
+   CurrentValue = false,
+   Flag = "Toggle3", 
+   Callback = function(Tog3)
+      autoRollActive3 = Tog3  
+      
+      if Tog3 == true then
+         task.spawn(function()
+            while autoRollActive3 == true do
+               game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("LuckyRollRequest"):FireServer()
+               wait(10)
+            end
+         end)
+      end
+   end,
+})
+
+local InfTab = MainWindow:CreateTab("Infinite Coins", 4483362458) -- Title, Image
+
+local Button = InfTab:CreateButton({
+   Name = "Get Infinite Money",
+   Callback = function()
+        local args = { 999999999999999 }
+        game:GetService("ReplicatedStorage"):WaitForChild("AddBubuCoins"):FireServer(unpack(args))
+   end,
+})
+
+local Button = InfTab:CreateButton({
+   Name = "Get Infinite Gems",
+   Callback = function()
+        local args = { 999999999999999 }
+        game:GetService("ReplicatedStorage"):WaitForChild("AddBubuGems"):FireServer(unpack(args))
+   end,
+})
+
+local OthersTab = MainWindow:CreateTab("Others", 4483362458) -- Title, Image
+
+local Button = OthersTab:CreateButton({
+   Name = "Infinite Yield",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+   end,
+})
