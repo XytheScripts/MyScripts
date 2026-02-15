@@ -1,0 +1,305 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local MainWindow = Rayfield:CreateWindow({
+   Name = "Trap Run Script",
+   Icon = 0,
+   LoadingTitle = "Trap Run Script",
+   LoadingSubtitle = "by Xythe",
+   ShowText = "Xythe Hub",
+   Theme = "Default",
+   ToggleUIKeybind = "K",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false,
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"Hello"}
+   }
+})
+
+local MainTab = MainWindow:CreateTab("Esp", 4483362458)
+
+
+local RunService = game:GetService("RunService")
+local TrapsFolder = workspace:WaitForChild("Game"):WaitForChild("Traps")
+
+MainTab:CreateToggle({
+    Name = "Trap ESP",
+    CurrentValue = false,
+    Flag = "Toggle1", 
+    Callback = function(enabled)
+        if enabled then
+            local originals = {}
+            local conn = RunService.Heartbeat:Connect(function()
+                for _, obj in ipairs(TrapsFolder:GetDescendants()) do
+                    if (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Decal") or obj:IsA("Texture")) then
+                        if not originals[obj] then
+                            originals[obj] = obj.Transparency
+                        end
+                        obj.Transparency = 0
+                    end
+                end
+            end)
+            for _, obj in ipairs(TrapsFolder:GetDescendants()) do
+                if (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Decal") or obj:IsA("Texture")) then
+                    if not originals[obj] then
+                        originals[obj] = obj.Transparency
+                    end
+                    obj.Transparency = 0
+                end
+            end
+            getgenv().trapEspConn = conn
+            getgenv().trapEspOriginals = originals
+        else
+            if getgenv().trapEspConn then
+                getgenv().trapEspConn:Disconnect()
+                getgenv().trapEspConn = nil
+            end
+            if getgenv().trapEspOriginals then
+                for part, val in pairs(getgenv().trapEspOriginals) do
+                    if part and part.Parent then
+                        part.Transparency = val
+                    end
+                end
+                getgenv().trapEspOriginals = nil
+            end
+        end
+    end,
+})
+
+
+local AutoTab = MainWindow:CreateTab("Auto", 4483362458)
+
+local teleportConnection -- to store Heartbeat connection
+
+local Toggle = AutoTab:CreateToggle({
+    Name = "Auto Win - Dont Move",
+    CurrentValue = false,
+    Flag = "Toggle2",
+    Callback = function(enabled)
+        if enabled then
+            local Players = game:GetService("Players")
+            local RunService = game:GetService("RunService")
+            local player = Players.LocalPlayer
+
+            local DETECTION_RADIUS = 10
+            local SPAWN_RADIUS = 10
+            local MOVE_THRESHOLD = 5
+            local CHECK_DELAY = 1.2
+            local COOLDOWN = 2
+
+            local activeZone = 1
+            local lastTP = 0
+            local awaitingPostWinCheck = false
+            local lastWinPosition = nil
+
+            local hubPos = Vector3.new(0.0, 3.5, 100.0)
+            local backupPos = Vector3.new(8.1, 30.5, -45.8)
+
+            local spawnPoints = {
+                Vector3.new(10.9,18.5,21.9), Vector3.new(-7.2,18.5,23.2),
+                Vector3.new(-10.5,18.5,12.9), Vector3.new(-6.4,18.5,5.2),
+                Vector3.new(2.8,18.5,-0.4), Vector3.new(17.1,18.5,2.3),
+                Vector3.new(21.7,18.5,12.5), Vector3.new(14.1,18.5,26.5),
+                Vector3.new(-2.6,18.5,29.6)
+            }
+
+            local zones = {
+                [1] = {
+                    win = Vector3.new(-75.6,3.5,100.1),
+                    danger = {
+                        Vector3.new(76.1,3.5,97.6), Vector3.new(75.7,3.5,136.0),
+                        Vector3.new(77.2,3.5,67.5), Vector3.new(76.0,3.5,95.6),
+                        Vector3.new(76.6,3.5,83.9), Vector3.new(75.7,3.5,118.6),
+                        Vector3.new(76.1,3.5,113.1), Vector3.new(76.1,3.5,96.6),
+                        Vector3.new(77.4,3.5,76.6), Vector3.new(75.8,3.5,70.0),
+                        Vector3.new(75.3,3.5,130.4), Vector3.new(75.7,3.5,84.0),
+                        Vector3.new(75.7,3.5,114.6), Vector3.new(76.4,3.5,97.9)
+                    }
+                },
+                [2] = {
+                    win = Vector3.new(-60.2,3.5,99.8),
+                    danger = {
+                        Vector3.new(59.9,3.5,75.0), Vector3.new(58.9,3.5,89.8),
+                        Vector3.new(59.9,3.5,115.8), Vector3.new(59.8,3.5,76.5),
+                        Vector3.new(60.3,3.5,94.2), Vector3.new(59.1,3.5,105.4),
+                        Vector3.new(60.2,3.5,121.4), Vector3.new(60.7,3.5,75.0),
+                        Vector3.new(60.2,3.5,89.7), Vector3.new(60.9,3.5,109.1),
+                        Vector3.new(60.1,3.5,122.0)
+                    }
+                },
+                [3] = {
+                    win = Vector3.new(-44.3,3.5,96.9),
+                    danger = {
+                        Vector3.new(42.2,3.5,100.6), Vector3.new(43.5,3.5,110.9),
+                        Vector3.new(43.5,3.5,85.0), Vector3.new(45.0,3.5,85.3),
+                        Vector3.new(45.6,3.5,102.4), Vector3.new(44.3,3.5,117.9),
+                        Vector3.new(43.3,3.5,108.7), Vector3.new(44.0,3.5,84.6),
+                        Vector3.new(45.6,3.5,97.4), Vector3.new(44.4,3.5,112.5)
+                    }
+                },
+                [4] = {
+                    win = Vector3.new(-28.7,3.5,98.2),
+                    danger = {
+                        Vector3.new(28.1,3.5,90.8), Vector3.new(28.1,3.5,106.8),
+                        Vector3.new(28.5,3.5,91.5), Vector3.new(29.4,3.5,108.9),
+                        Vector3.new(29.5,3.5,100.0)
+                    }
+                }
+            }
+
+            local function isNear(pos, target, radius)
+                return (pos - target).Magnitude <= radius
+            end
+
+            local function atSpawn(pos)
+                for _, sp in ipairs(spawnPoints) do
+                    if isNear(pos, sp, SPAWN_RADIUS) then return true end
+                end
+                return false
+            end
+
+            local function atHub(pos)
+                return pos:FuzzyEq(hubPos, 0.1)
+            end
+
+            teleportConnection = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                if not char then return end
+
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+
+                local pos = hrp.Position
+                local now = tick()
+
+                if now - lastTP < COOLDOWN then return end
+
+                if atSpawn(pos) then
+                    activeZone = 1
+                    awaitingPostWinCheck = false
+                    lastWinPosition = nil
+                    return
+                end
+
+                if zones[activeZone] then
+                    for _, dangerPos in ipairs(zones[activeZone].danger) do
+                        if isNear(pos, dangerPos, DETECTION_RADIUS) then
+                            hrp:PivotTo(CFrame.new(zones[activeZone].win))
+                            lastTP = now
+                            lastWinPosition = zones[activeZone].win
+                            awaitingPostWinCheck = true
+
+                            if activeZone < 4 then
+                                activeZone += 1
+                            end
+                            return
+                        end
+                    end
+                end
+
+                if awaitingPostWinCheck and lastWinPosition then
+                    if (pos - lastWinPosition).Magnitude > MOVE_THRESHOLD then
+                        awaitingPostWinCheck = false
+                        task.wait(CHECK_DELAY)
+                        local newPos = hrp.Position
+                        if not (atSpawn(newPos) or atHub(newPos)) then
+                            hrp:PivotTo(CFrame.new(backupPos))
+                            lastTP = tick()
+                        end
+                    end
+                end
+            end)
+        else
+            if teleportConnection then
+                teleportConnection:Disconnect()
+                teleportConnection = nil
+            end
+        end
+    end,
+})
+
+
+local Label = AutoTab:CreateLabel(
+   "When AutoWin is active it will only start to work when a new round starts - It will not work if it is turned on in the middle of a round ", 
+   Color3.fromRGB(255, 200, 100),   
+   false                            
+)
+
+local Label = AutoTab:CreateLabel(
+   "It will also not work properly if you move", 
+   Color3.fromRGB(255, 200, 100),   
+   false                            
+)
+
+
+local autoWinRunning = false
+
+local Toggle = AutoTab:CreateToggle({
+    Name = "Auto Win Obby",
+    CurrentValue = false,
+    Flag = "Toggle2",
+    Callback = function(enabled)
+
+        if enabled then
+            autoWinRunning = true
+
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local targetPosition = Vector3.new(-9.2, 98.0, -31.2)
+
+            local function teleportToTarget()
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+                end
+            end
+
+            teleportToTarget()
+
+            task.spawn(function()
+                while autoWinRunning do
+                    task.wait(5)
+                    if autoWinRunning then
+                        teleportToTarget()
+                    end
+                end
+            end)
+
+        else
+            autoWinRunning = false
+        end
+    end,
+})
+
+
+local Label = AutoTab:CreateLabel(
+   "Dont use both autos at the same time", 
+   Color3.fromRGB(255, 200, 100),   
+   false                            
+)
+
+
+local OthersTab = MainWindow:CreateTab("Others", 4483362458)
+
+OthersTab:CreateButton({
+   Name = "Infinite Yield",
+   Callback = function()
+      loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+   end,
+})
