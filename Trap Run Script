@@ -253,7 +253,7 @@ local autoWinRunning = false
 local Toggle = AutoTab:CreateToggle({
     Name = "Auto Win Obby",
     CurrentValue = false,
-    Flag = "Toggle2",
+    Flag = "Toggle3",
     Callback = function(enabled)
 
         if enabled then
@@ -303,3 +303,4 @@ OthersTab:CreateButton({
       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
    end,
 })
+
